@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Library Dashboard</title>
+  <style>
+    /* --- page layout --- */
+    body { font-family: Arial, sans-serif; background:#f5f9f6; margin:0; color:#333; }
+   header {
+  background: #2d6a4f;
+  color: #fff;
+  padding: 24px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  align-items: center; 
+  text-align: center;
+  margin: 0;
+  font-size: 22px;
+}
+
+/*.header-right {
+  display: flex;
+  align-items: center;
+}*/
+
+header a.logout-btn {
+  background: #d90429;
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 700;
+  margin-right: 20px; /* Space between logout and other buttons */
+}
+
+header a.logout-btn {
+      background: #d90429;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 700;
+      margin-right: 20px; /* Space between logout and other buttons */
+    }
+
+    .header-right {
+      position: relative;
+    }
+    
+    .toggle-menu {
+      display: none;
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: #f5f9f6;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    
+    .toggle-menu a {
+      display: block;
+      padding: 10px;
+      text-decoration: none;
+      color: black;
+      margin: 5px 0; /* Increased space between buttons */
+    }
+    
+    .toggle-menu a:hover {
+      background: #f0f0f0;
+    }
+    
+    .toggle-btn {
+      cursor: pointer;
+      background: #007BFF;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+#welcome-message {
+  margin-right: 20px; /* Space between welcome message and buttons */
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column; /* Align items vertically */
+  align-items: flex-start; /* Align items to the start */
+}
+
+.button-container .btn {
+  margin-bottom: 5px; /* Space between button and description */
+}
+
+    /* messages flash */
+    .messages {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 0;
+    }
+
+    main{ max-width:1100px; margin:70px auto 40px; padding:0 20px; }
+    .cards{ display:flex; gap:18px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
+    .card{ background:#fff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.08); width:260px; padding:18px; text-align:center; }
+    .card h3{ margin:0 0 8px; }
+    .btn{ display:inline-block; padding:10px 16px; border-radius:6px; background:#0077b6; color:#fff; border:none; cursor:pointer; font-weight:700; transition: background 0.3s; }
+    .btn.green{ background:#2d6a4f; }
+    .btn.red{ background:#d90429; }
+    .btn.blue{ background:#0b5ed7; }
+
+    .btn:hover { opacity: 0.9; }
+    .btn.green:hover { background-color: #3b8a5a; }
+    .btn.red:hover { background-color: #c7001d; }
+    .btn.blue:hover { background-color: #0077b6; }
+
+    table{ width:100%; border-collapse:collapse; background:#fff; margin-bottom:18px; }
+    th, td{ padding:10px; border:1px solid #e6e6e6; text-align:left; }
+    thead th{ background:#2d6a4f; color:#fff; }
+    thead.rented th{ background:#d90429; color:#fff; }
+
+    /* tabs */
+    .tabs{ display:flex; justify-content:center; gap:12px; margin-bottom:14px; padding:8px 0; }
+    .tab-btn{ background:#fff; border:2px solid teal; color:teal; padding:10px 18px; cursor:pointer; border-radius:8px; font-weight:700; min-width:140px; transition: all .2s; }
+    .tab-btn.active{ background:teal; color:#fff; transform:translateY(-3px); box-shadow:0 6px 12px rgba(0,0,0,0.08); }
+
+    /* modal base */
+    #book-modal, #member-modal, .flash-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999; }
+    #book-modal.active, #member-modal.active, .flash-modal.active { display:flex; }
+    .modal-content{ width:640px; max-width:96%; background:#fff; padding:18px 20px; border-radius:10px; position:relative; max-height:85vh; overflow:auto; }
+    .close-btn{ position:absolute; right:12px; top:8px; font-size:20px; cursor:pointer; border:none; background:none; }
+
+    /* book wizard */
+    .step{ display:none; }
+    .step.active{ display:block; }
+    .category-buttons button{ margin:6px 6px 0 0; padding:8px 12px; border-radius:6px; border:none; background:#2d6a4f; color:#fff; font-weight:700; cursor:pointer; }
+
+    .form-group{ margin:8px 0; }
+    label{ display:block; font-weight:600; margin-bottom:6px; }
+    input[type="text"], input[type="number"], input[type="date"], select { width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
+
+    /* members modal specific */
+    #member-modal .modal-content{ width:760px; }
+    #member-flash{ margin:8px 0 14px; display:none; padding:10px 12px; border-radius:8px; font-weight:600; color:#fff; }
+    #member-flash.success{ background:#28a745; display:block; }
+    #member-flash.error{ background:#dc3545; display:block; }
+
+    #members-list-table{ width:100%; border-collapse:collapse; margin-bottom:12px; }
+    #members-list-table th, #members-list-table td{ padding:8px 10px; border:1px solid #eee; text-align:left; }
+    #members-list-table thead th{ background:#f0f6f4; font-weight:700; }
+
+    .mini-loader{ display:inline-block; width:18px; height:18px; border-radius:50%; border:3px solid rgba(0,0,0,0.08); border-top-color:#2d6a4f; animation:spin 1s linear infinite; vertical-align:middle; margin-left:8px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .member-remove-btn{ background:#d90429; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:700; }
+    #btn-back-to-prompt{ margin-top:8px; background:#666; color:#fff; border:none; padding:8px 10px; border-radius:6px; cursor:pointer; }
+
+    /* small responsive tweaks */
+    @media (max-width:760px){
+      .cards { flex-direction:column; align-items:center; }
+      .card{ width:96%; max-width:420px; }
+      .modal-content{ width:96%; }
+    }
+
+
+    /*toogle mene section*/
+
+
+    .header-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .toggle-menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border: 0px solid #ccc;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 5px;
+            border-radius: 5px;
+
+        }
+        .toggle-menu a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: black;
+        }
+        .toggle-menu a:hover {
+            background: #f0f0f0;
+        }
+        .toggle-btn {
+            cursor: pointer;
+            background: #007BFF;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .toggle-btn:focus {
+            outline: none;
+        }
+        #import{
+padding: 10px;
+
+        }
+
+  /* ----- Import modal styles (added) ----- */
+  #import-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 10001; }
+  #import-modal.active { display: flex; }
+  #import-modal .import-box { background: #fff; padding: 18px; border-radius: 8px; width: 92%; max-width: 480px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
+  #import-modal .import-box h3 { margin-top: 0; margin-bottom: 8px; font-size: 18px; }
+  #import-modal .import-box .close { position: absolute; right: 10px; top: 8px; background: none; border: none; font-size: 20px; cursor: pointer; }
+  #import-modal .import-box input[type="file"] { width: 100%; padding: 6px; }
+  #import-modal .import-actions { margin-top:12px; display:flex; gap:8px; justify-content:flex-end; }
+  #import-modal #import-modal-status { margin-top: 10px; font-weight: 600; color: #222; word-break: break-word; }
+  @media (max-width:420px){
+    #import-modal .import-box { padding: 14px; }
+  }
+  /* ----- end added styles ----- */
+  </style>
+</head>
+<body>
+  <header>
+    <h1 style="text-align: center;">Lunyati Library - Dashboard</h1>
+
+   <!-- <br><div id="welcome-message">Welcome, {{ username }} 👋</di>-->
+  
+  
+  <div class="header-right">
+    <button class="toggle-btn" onclick="toggleMenu()">☰</button>
+    <div class="toggle-menu" id="toggle-menu">
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        <a id="import" class="btn" href="{{ url_for('daily_planner') }}">Planner</a>
+        <button id="import" class="btn">import</button>
+        
+    </div>
+</div>
+  </div>
+</header>
+
+  
+  <div class="messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+  <main>
+   
+
+    <div class="cards">
+      <div class="card">
+        <h3>📚 Manage Books</h3>
+        <p class="small-muted">Add, remove, check out or return books</p>
+        <button id="open-books-btn" class="btn green">Open Books</button>
+      </div>
+
+      <div class="card">
+        <h3>👥 Manage Members</h3>
+        <p class="small-muted">View and manage users / members</p>
+        <button id="open-members-btn" class="btn">Open</button>
+      </div>
+
+      <div class="card">
+        <h3>📈 Reports</h3>
+        <p class="small-muted">View borrowing statistics & overdue</p>
+        <a id="open-reports-btn" class="btn red" href="{{ url_for('reports_page') }}" style="text-decoration:none;display:inline-block;">
+          <span style="margin-right:8px;">📈</span> Reports
+        </a>
+      </div>
+    </div>
+
+    <section>
+  <h3>Search Books</h3>
+  <div style="position: relative; width: 100%; max-width: 400px;">
+    <input type="text" id="book-search" placeholder="Search by any book field..."
+           style="width:100%; padding:8px 30px 8px 8px; border-radius:6px; border:1px solid #ccc; margin-bottom:12px;">
+    <span id="clear-search" style="
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          cursor: pointer;
+          font-weight: bold;
+          color: #999;
+          display: none;">&times;</span>
+  </div>
+<script>
+const searchInput = document.getElementById('book-search');
+const clearBtn = document.getElementById('clear-search');
+
+searchInput.addEventListener('input', () => {
+  clearBtn.style.display = searchInput.value ? 'block' : 'none';
+  filterBooks(searchInput.value); // trigger search as user types
+});
+
+clearBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  clearBtn.style.display = 'none';
+  searchInput.focus();
+  filterBooks(''); // reload all books/members when cleared
+});
+
+// Example filter function (replace with your actual filtering logic)
+function filterBooks(query) {
+  // If you're filtering table rows:
+  const rows = document.querySelectorAll('table tbody tr');
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+  });
+
+  // OR if you're fetching from API, call your AJAX/fetch here
+}
+</script>
+
+
+
+    <!-- tabs -->
+    <div class="tabs" role="tablist" aria-label="Dashboard sections">
+      <button class="tab-btn active" data-tab="available" role="tab" aria-selected="true">Available Books</button>
+      <button class="tab-btn" data-tab="rented" role="tab" aria-selected="false">Rented Books</button>
+    </div>
+
+    <!-- tables (tab content) -->
+    <div class="tab-content" id="available" style="display:block;">
+      <h3>Available Books</h3>
+      <table>
+        <thead><tr><th>Book ID</th><th>Title</th><th>Author</th><th>Category</th><th>Status</th></tr></thead>
+        <tbody id="available-books">
+          {% for b in available_books %}
+            <tr>
+              <td>{{ b.book_id }}</td><td>{{ b.title }}</td><td>{{ b.author or '' }}</td><td>{{ b.category or '' }}</td><td>{{ b.status }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5">No available books</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-content" id="rented" style="display:none;">
+      <h3>Rented Books</h3>
+      <table>
+        <thead class="rented"><tr><th>Book ID</th><th>Title</th><th>Borrower</th><th>Due Date</th><th>Service Fee</th></tr></thead>
+        <tbody id="rented-books">
+          {% for r in rented_books %}
+            <tr>
+              <td>{{ r.book_id }}</td><td>{{ r.title }}</td><td>{{ r.borrower_id or '—' }}</td><td>{{ r.due_date or '—' }}</td><td>{{ '%.2f'|format(r.service_fee or 0) }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5">No rented books</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Members modal -->
+  <div id="member-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content" role="document">
+      <button class="close-btn" id="member-modal-close">&times;</button>
+      <div id="member-flash" role="status" aria-live="polite"></div>
+
+      <div id="member-actions-prompt">
+        <p style="margin:0 0 8px 0;"><strong><h3>What would you like to do?</h3></strong></p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <!--style="background:#2d6a4f; color:#fff; padding:8px 12px; border-radius:6px; text-decoration:none;-->
+            <a href="{{ url_for('member_registration') }}" class="btn" style="background:#2d6a4f; color:#fff; padding:8px 12px; border-radius:6px; text-decoration:none;">Add Member</a>
+          
+          <a id="btn-view-members" class="btn" href="{{ url_for('view_members') }}" style="background:#0077b6; color:#fff; padding:8px 12px; border-radius:6px; text-decoration:none; display:inline-block;">View Members</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Book modal (wizard) -->
+  <div id="book-modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="close-btn" id="modal-close">&times;</button>
+
+      <div class="step active" data-step="1">
+        <h3>What would you like to do?</h3>
+        <div style="margin-top:12px;">
+          <button class="btn green" data-action="add">Add Book</button>
+          <button class="btn red" data-action="remove">Remove Book</button>
+          <button class="btn" data-action="return">Return Book</button>
+          <button class="btn" data-action="checkout">Check Out</button>
+        </div>
+      </div>
+
+      <div class="step" data-step="add-cat">
+        <h3>Choose category</h3>
+        <div class="category-buttons" style="margin-top:10px;">
+          <button data-cat="Student Reference">Student Reference</button>
+          <button data-cat="Fiction">Fiction</button>
+          <button data-cat="Childrens Corner">Children's Corner</button>
+          <button data-cat="Adult Fiction">Adult Fiction</button>
+          <button data-cat="Personal Development">Personal Development</button>
+        </div>
+        <div class="form-actions"><button class="btn" id="back-step1">Back</button></div>
+      </div>
+
+      <div class="step" data-step="add-details">
+        <h3>Add Book Details</h3>
+        <form id="add-book-form">
+          <input type="hidden" id="add-category" name="category" />
+          <div class="form-group"><label>Title</label><input id="add-title" name="title" type="text" required /></div>
+          <div class="form-group"><label>Author</label><input id="add-author" name="author" type="text" /></div>
+          <div class="form-group"><label>Publisher</label><input id="add-publisher" name="publisher" type="text" /></div>
+          <div class="form-group"><label>Year</label><input id="add-year" name="year" type="number" min="1000" max="2099" /></div>
+          <div class="form-group"><label>Charge After Due Date</label><input id="add-charge-after-due" name="charge_after_due_date" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="back-to-cat">Back</button>
+            <button type="submit" class="btn green">Add Book</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="step" data-step="remove">
+        <h3>Remove Book</h3>
+        <form id="remove-book-form">
+          <div class="form-group"><label>Book ID</label><input id="remove-id" name="book_id" type="text" required/></div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="back-to-1-from-remove">Back</button>
+            <button type="submit" class="btn red">Remove</button>
+          </div>
+        </form>
+      </div>
+
+     <div class="step" data-step="checkout">
+    <h3>Check Out Book</h3>
+    <form id="checkout-form">
+        <div class="form-group"><label>Member ID</label><input id="checkout-member-id" name="member_id" type="text" required/></div>
+        <div class="form-group"><label>Book ID</label><input id="checkout-book-id" name="book_id" type="text" required/></div>
+        <div class="form-group"><label>Due Date</label><input id="checkout-due" name="due_date" type="date" required/></div>
+        <div class="form-actions">
+            <button type="button" class="btn" id="back-to-1-from-checkout">Back</button>
+            <button type="submit" class="btn blue">Check Out</button>
+        </div>
+    </form>
+</div>
+
+      <div class="step" data-step="return">
+    <h3>Return Book</h3>
+    <form id="return-form">
+        <div class="form-group">
+            <label>Member ID</label>
+            <input id="return-member-id" name="member_id" type="text" required />
+        </div>
+        <div class="form-group">
+            <label>Book ID</label>
+            <input id="return-book-id" name="book_id" type="text" required />
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn" id="back-to-1-from-return">Back</button>
+            <button type="submit" class="btn">Return</button>
+        </div>
+    </form>
+</div>    
+</div>
+  </div>
+
+  <!-- ===== Import modal (added) ===== -->
+  <div id="import-modal" aria-hidden="true">
+    <div class="import-box" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <button class="close" id="import-modal-close" aria-label="Close">&times;</button>
+      <h3 id="import-modal-title">Import</h3>
+      <p style="margin:0 0 8px 0; font-size:0.95rem;">Choose a CSV or XLSX file to import.</p>
+      <input type="file" id="import-file" accept=".csv,.xlsx" />
+      <div class="import-actions">
+        <button class="btn" id="import-modal-cancel">Close</button>
+        <button class="btn green" id="import-modal-upload">Upload</button>
+      </div>
+      <div id="import-modal-status" aria-live="polite"></div>
+    </div>
+  </div>
+  <!-- ===== end Import modal ===== -->
+
+ <script>
+    (function(){
+      // ---- helpers ----
+      const $ = id => document.getElementById(id);
+      const safeQuery = sel => Array.from(document.querySelectorAll(sel || ''));
+
+      // welcome fade
+      const welcome = $('welcome-message');
+      if (welcome) setTimeout(()=> welcome.style.opacity='0', 5000);
+
+      // elements
+      const tabButtons = safeQuery('.tab-btn');
+      const tabContents = safeQuery('.tab-content');
+      const bookModal = $('book-modal');
+      const memberModal = $('member-modal');
+      const openBooksBtn = $('open-books-btn');
+      const openMembersBtn = $('open-members-btn');
+      const modalClose = $('modal-close');
+      const memberModalClose = $('member-modal-close');
+
+      // ---- tabs ----
+      function showTab(tabId){
+        tabContents.forEach(c => c.style.display = (c.id === tabId) ? 'block' : 'none');
+        tabButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+      }
+      tabButtons.forEach(btn => btn.addEventListener('click', ()=> showTab(btn.dataset.tab)));
+      showTab('available');
+
+      // ---- modal helpers ----
+      function openModal(el){ if(!el) return; el.classList.add('active'); el.setAttribute('aria-hidden','false'); }
+      function closeModal(el){ if(!el) return; el.classList.remove('active'); el.setAttribute('aria-hidden','true'); }
+
+      // close buttons
+      if(modalClose) modalClose.addEventListener('click', ()=> closeModal(bookModal));
+      if(memberModalClose) memberModalClose.addEventListener('click', ()=> closeModal(memberModal));
+
+      // overlay click to close
+      [bookModal, memberModal].forEach(m => {
+        if(!m) return;
+        m.addEventListener('click', (ev) => { if(ev.target === m) closeModal(m); });
+      });
+
+      // openers
+      if(openBooksBtn) openBooksBtn.addEventListener('click', ()=> { openModal(bookModal); showStep('1'); });
+      if(openMembersBtn) openMembersBtn.addEventListener('click', ()=> { openModal(memberModal); });
+
+      // escape to close either modal
+      document.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ closeModal(bookModal); closeModal(memberModal); } });
+
+      // ---- book wizard ----
+      const steps = safeQuery('.step');
+      function showStep(name){
+        steps.forEach(s => s.classList.remove('active'));
+        const target = steps.find(s => s.dataset.step === String(name));
+        if(target) target.classList.add('active');
+      }
+
+      // step actions
+      safeQuery('[data-action]').forEach(btn => btn.addEventListener('click', ()=> {
+        const action = btn.dataset.action;
+        if(action === 'add') showStep('add-cat');
+        if(action === 'remove') showStep('remove');
+        if(action === 'checkout') showStep('checkout');
+        if(action === 'return') showStep('return');
+      }));
+
+      // back links
+      ['back-step1','back-to-cat','back-to-1-from-remove','back-to-1-from-checkout','back-to-1-from-return'].forEach(id=>{
+        const el = $(id); if(el) el.onclick = ()=> showStep('1');
+      });
+
+      // category select
+      safeQuery('.category-buttons button').forEach(btn => btn.addEventListener('click', ()=> {
+        const el = $('add-category'); if(el) el.value = btn.dataset.cat; showStep('add-details');
+      }));
+
+      // ---- AJAX helper ----
+      async function postJson(url, payload){
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        try { return await res.json(); } catch(e){ return { ok:false, msg:'Invalid JSON response' }; }
+      }
+
+      // close book modal on success (small delay)
+      const closeBookModalOnSuccess = ok => { if(ok) setTimeout(()=> closeModal(bookModal), 900); };
+
+      // ---- forms (guarded) -------------------------------------------
+      const addBookForm = $('add-book-form');
+      if(addBookForm) addBookForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const payload = {
+          title: $('add-title').value.trim(),
+          author: $('add-author').value.trim(),
+          publisher: $('add-publisher').value.trim(),
+          year: $('add-year').value,
+          category: $('add-category').value,
+          charge_after_due_date: $('add-charge-after-due').value.trim()
+        };
+        const j = await postJson('/books/add', payload);
+        alert(j.msg || JSON.stringify(j));  // This will show the success message including the generated book ID
+        // closeBookModalOnSuccess(j.ok); // Commented out to keep modal open
+        if(j.ok) setTimeout(()=> location.reload(), 1200);
+      });
+
+      const removeBookForm = $('remove-book-form');
+      if(removeBookForm) removeBookForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const payload = { book_id: $('remove-id').value.trim() };
+        const j = await postJson('/books/remove', payload);
+        alert(j.msg || JSON.stringify(j));
+        // closeBookModalOnSuccess(j.ok); // Commented out to keep modal open
+        if(j.ok) setTimeout(()=> location.reload(), 1200);
+      });
+
+    const checkoutForm = $('checkout-form');
+if (checkoutForm) checkoutForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const payload = {
+        member_id: $('checkout-member-id').value.trim(), // Convert to integer
+        book_id: $('checkout-book-id').value.trim(),
+        due_date: $('checkout-due').value
+    };
+
+    // Add logging for debugging
+    console.log('Payload sent to server:', payload);
+
+    const j = await postJson('/books/checkout', payload);
+    alert(j.msg || JSON.stringify(j));
+    // closeBookModalOnSuccess(j.ok); // Commented out to keep modal open
+    if (j.ok) setTimeout(() => location.reload(), 1200);
+});
+
+     const returnForm = $('return-form');
+if (returnForm) returnForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    
+    // Log the values being sent
+    const payload = {
+        book_id: $('return-book-id').value.trim(),
+        member_id: $('return-member-id').value.trim() // Keep as string
+    };
+
+    console.log('Payload being sent:', payload); // Debugging line
+
+    const j = await postJson('/books/return', payload);
+    if (j.ok) { 
+        alert(`${j.msg}. Service fee: ${j.service_fee || 0}`); 
+        // closeBookModalOnSuccess(true); // Commented out to keep modal open
+        setTimeout(() => location.reload(), 1200); 
+    } else alert(j.msg || JSON.stringify(j));
+});
+
+      // ---- search available books ----
+      const searchEl = $('book-search');
+      if(searchEl) searchEl.addEventListener('input', function(){
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#available-books tr').forEach(row => {
+          const text = Array.from(row.cells).map(c => c.textContent.toLowerCase()).join(' ');
+          row.style.display = text.includes(q) ? '' : 'none';
+        });
+      });
+    })(); 
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(alert => {
+          alert.style.opacity = "0"; // Start fade-out
+          setTimeout(() => alert.remove(), 500); // Remove after fade
+        });
+      }, 3000); // Wait 3 seconds before fading
+    });
+    //toogle menue 
+     function toggleMenu() {
+        const menu = document.getElementById('toggle-menu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Close the menu if clicked outside
+    window.onclick = function(event) {
+        if (!event.target.matches('.toggle-btn')) {
+            const menu = document.getElementById('toggle-menu');
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            }
+        }
+    };
+</script>
+
+<!-- ===== Import modal script (added) ===== -->
+<script>
+  (function(){
+    // Wait for DOM
+    document.addEventListener('DOMContentLoaded', function () {
+      // There are two elements with id="import" in your markup (an <a> and a <button>).
+      // We must pick the BUTTON inside the toggle menu to open the modal, not the Planner link.
+      const importElements = document.querySelectorAll('[id="import"]');
+      let importButton = null;
+      importElements.forEach(el => {
+        if (el.tagName && el.tagName.toUpperCase() === 'BUTTON') importButton = el;
+      });
+      // Fallback: choose last element with id="import"
+      if (!importButton && importElements.length) importButton = importElements[importElements.length - 1];
+
+      const modal = document.getElementById('import-modal');
+      const modalClose = document.getElementById('import-modal-close');
+      const modalCancel = document.getElementById('import-modal-cancel');
+      const modalUpload = document.getElementById('import-modal-upload');
+      const fileInput = document.getElementById('import-file');
+      const statusEl = document.getElementById('import-modal-status');
+
+      function openImportModal(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!modal) return;
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden','false');
+        statusEl.textContent = '';
+        if (fileInput) fileInput.value = '';
+      }
+
+      function closeImportModal() {
+        if (!modal) return;
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden','true');
+        statusEl.textContent = '';
+      }
+
+      if (importButton) {
+        importButton.addEventListener('click', openImportModal);
+      }
+
+      if (modalClose) modalClose.addEventListener('click', closeImportModal);
+      if (modalCancel) modalCancel.addEventListener('click', closeImportModal);
+
+      // click outside to close
+      if (modal) {
+        modal.addEventListener('click', (ev) => {
+          if (ev.target === modal) closeImportModal();
+        });
+      }
+
+      // escape key closes modal
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && modal && modal.classList.contains('active')) {
+          closeImportModal();
+        }
+      });
+
+      // Upload handler (posts file to endpoint). Adjust `endpoint` if your backend expects a different route.
+      const endpoint = '/api/import_books'; // change if you want a different route
+
+      if (modalUpload) {
+        modalUpload.addEventListener('click', async function (e) {
+          e.preventDefault();
+          statusEl.textContent = '';
+          if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            statusEl.textContent = 'Please choose a file to upload.';
+            return;
+          }
+          const file = fileInput.files[0];
+          const allowed = ['.csv', '.xlsx'];
+          const ext = (file.name.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+          if (!allowed.includes(ext)) {
+            statusEl.textContent = 'Only .csv or .xlsx files are allowed.';
+            return;
+          }
+          const fd = new FormData();
+          fd.append('file', file);
+          statusEl.textContent = 'Uploading...';
+          try {
+            const resp = await fetch(endpoint, { method: 'POST', body: fd });
+            const text = await resp.text();
+            let json;
+            try { json = text ? JSON.parse(text) : {}; } catch (_) { json = { ok: resp.ok, msg: text || ('Status: ' + resp.status) }; }
+            statusEl.textContent = json.msg || json.message || (resp.ok ? 'Upload succeeded' : ('Upload failed (status ' + resp.status + ')'));
+            if (json.ok) {
+              setTimeout(() => { closeImportModal(); location.reload(); }, 900);
+            }
+          } catch (err) {
+            console.error('Import upload error', err);
+            statusEl.textContent = 'Upload failed: ' + (err && err.message ? err.message : String(err));
+          }
+        });
+      }
+    });
+  })();
+</script>
+</body>
+</html>
+

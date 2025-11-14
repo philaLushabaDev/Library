@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Members -- Lunyati Library</title>
+  <style>
+    body{font-family:Arial, sans-serif;background:#f5f9f6;margin:0;color:#222}
+    .wrap{max-width:1100px;margin:28px auto;padding:18px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    header {
+      background: #2d6a4f;
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { margin: 0; font-size: 22px; }
+    .header-right { display: flex; align-items: center; }
+    header a.logout-btn {
+      background: #d90429;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 700;
+      margin-right: 20px;
+    }
+    #welcome-message { margin-right: 20px; }
+    .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .btn { padding: 8px 12px; border-radius: 6px; border: none; background: #2d6a4f; color: #fff; cursor: pointer; font-weight: 700; text-decoration: none; display: inline-block; }
+    .btn.ghost { background: #fff; color: #2d6a4f; border: 2px solid #2d6a4f; }
+    input[type="search"] { padding: 8px; border-radius: 6px; border: 1px solid #ccc; width: 360px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; border: 1px solid #e6e6e6; text-align: left; font-size: 14px; }
+    thead th { background: #2d6a4f; color: #fff; }
+    .action-btn { padding: 6px 8px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700; margin-right: 6px; }
+    .action-btn.delete { background: #d90429; color: #fff; }
+    .action-btn.toggle { background: #0077b6; color: #fff; }
+    .muted { color: #666; font-size: 13px; }
+    #import-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; }
+    #import-modal div { background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Lunyati Library - Members</h1>
+  </header>
+  <div class="wrap">
+    <h1>Members</h1>
+    <div class="controls">
+      <a href="{{ url_for('member_registration') }}" class="btn">Add New Member</a>
+      <button id="btn-refresh" class="btn ghost">Refresh list</button>
+      <a href="{{ url_for('dashboard') }}" class="btn" style="background:#0077b6;">Back to Dashboard</a>
+      <input id="filter" type="search" placeholder="Filter by name / email / phone ..." />
+      <button id="btn-import" class="btn">Import Members</button>
+    </div>
+
+    <div id="msg" class="muted"></div>
+
+    <table id="members-table" aria-live="polite">
+      <thead>
+        <tr>
+          <th>Member ID</th>
+          <th>Gender</th>
+          <th>Full name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Status</th>
+          <th>Outstanding</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="members-tbody">
+        <tr><td colspan="8" class="muted">Loading members...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="import-modal">
+    <div>
+      <h2>Import Members</h2>
+      <input type="file" id="file-input" accept=".csv,.xlsx" />
+      <button id="btn-upload" class="btn">Upload</button>
+      <button id="close-import-modal" class="btn ghost">Close</button>
+      <div id="import-msg" class="muted"></div>
+    </div>
+  </div>
+
+  <!-- Modal for displaying member details -->
+  <div id="member-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; max-width:600px; width:100%;">
+      <h2>Member Details</h2>
+      <div id="member-details"></div>
+      <button id="close-modal" class="btn">Close</button>
+    </div>
+  </div>
+
+  <script>
+  (async function(){
+    const tbody = document.getElementById('members-tbody');
+    const msg = document.getElementById('msg');
+    const filter = document.getElementById('filter');
+    const modal = document.getElementById('member-modal');
+    const memberDetails = document.getElementById('member-details');
+    const closeModal = document.getElementById('close-modal');
+    const importModal = document.getElementById('import-modal');
+    const fileInput = document.getElementById('file-input');
+    const btnImport = document.getElementById('btn-import');
+    const btnUpload = document.getElementById('btn-upload');
+    const closeImportModal = document.getElementById('close-import-modal');
+    const importMsg = document.getElementById('import-msg');
+
+    document.getElementById('btn-refresh').addEventListener('click', loadMembers);
+    filter.addEventListener('input', () => {
+      const q = filter.value.trim().toLowerCase();
+      Array.from(tbody.querySelectorAll('tr')).forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+
+    btnImport.addEventListener('click', () => {
+      importModal.style.display = 'flex';
+    });
+
+    closeImportModal.addEventListener('click', () => {
+      importModal.style.display = 'none';
+    });
+
+    btnUpload.addEventListener('click', async () => {
+  const file = fileInput.files[0];
+  if (!file) {
+    importMsg.textContent = 'Please select a file to upload.';
+    return;
+  }
+
+  importMsg.textContent = 'Please wait...'; // <-- Show "Please wait" immediately
+  btnUpload.disabled = true; // optional: disable button to prevent double clicks
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch("{{ url_for('import_members') }}", {
+      method: 'POST',
+      body: formData
+    });
+    const j = await res.json();
+    if (j.ok) {
+      importMsg.textContent = 'Members imported successfully!';
+      await loadMembers(); // reload members after import
+    } else {
+      importMsg.textContent = j.msg || 'Failed to import members.';
+    }
+  } catch (err) {
+    console.error(err);
+    importMsg.textContent = 'Error uploading file.';
+  } finally {
+    btnUpload.disabled = false; // re-enable the button
+  }
+});
+
+
+    async function loadMembers(){
+      tbody.innerHTML = '<tr><td colspan="8" class="muted">Loading members...</td></tr>';
+      msg.textContent = '';
+      try {
+        const res = await fetch("{{ url_for('api_list_members') }}");
+        if (!res.ok) throw new Error('Network response not ok');
+        const j = await res.json();
+        const list = j.members || [];
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="8" class="muted">No members found.</td></tr>';
+          return;
+        }
+        render(list);
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="8" class="muted">Error loading members. See console.</td></tr>';
+      }
+    }
+
+    function render(list){
+      tbody.innerHTML = '';
+      list.forEach(m => {
+        const mid = m.member_id ?? m.id ?? '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(mid)}</td>
+          <td>${escapeHtml(m.gender ?? '-')}</td>
+          <td>${escapeHtml(m.full_name ?? '-')}</td>
+          <td>${escapeHtml(m.email ?? '-')}</td>
+          <td>${escapeHtml(m.phone ?? '-')}</td>
+          <td>${escapeHtml(m.status ?? '-')}</td>
+          <td>${(m.outstanding_fees != null) ? Number(m.outstanding_fees).toFixed(2) : '0.00'}</td>
+          <td>
+            <button class="action-btn toggle" data-id="${escapeHtml(mid)}" data-status="${escapeHtml(m.status ?? 'active')}">${m.status === 'active' ? 'Suspend' : 'Activate'}</button>
+            <button class="action-btn delete" data-id="${escapeHtml(mid)}">Delete</button>
+            <button class="action-btn view" data-id="${escapeHtml(mid)}">View</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.action-btn.delete').forEach(btn=>btn.addEventListener('click', onDelete));
+      tbody.querySelectorAll('.action-btn.toggle').forEach(btn=>btn.addEventListener('click', onToggle));
+      tbody.querySelectorAll('.action-btn.view').forEach(btn=>btn.addEventListener('click', onView));
+    }
+
+    async function onView(e){
+      const id = e.currentTarget.dataset.id;
+      try {
+        const res = await fetch(`{{ url_for('api_view_member') }}?member_id=${id}`);
+        const member = await res.json();
+        if (member) {
+          memberDetails.innerHTML = `
+            <p><strong>Member ID:</strong> ${escapeHtml(member.member_id)}</p>
+            <p><strong>Gender:</strong> ${escapeHtml(member.gender || '-')}</p>
+            <p><strong>Full Name:</strong> ${escapeHtml(member.full_name)} <span style="color:red;">*</span></p>
+            <p><strong>Email:</strong> ${escapeHtml(member.email || '-')}</p>
+            <p><strong>Phone:</strong> ${escapeHtml(member.phone || '-')}</p>
+            <p><strong>Physical Address:</strong> ${escapeHtml(member.physical_address || '-')}</p>
+            <p><strong>Postal Address:</strong> ${escapeHtml(member.postal_address || '-')}</p>
+            <p><strong>Join Date:</strong> ${escapeHtml(member.join_date || '-')}</p>
+            <p><strong>Status:</strong> ${escapeHtml(member.status || 'active')}</p>
+            <p><strong>Outstanding Fees:</strong> E${(member.outstanding_fees != null) ? Number(member.outstanding_fees).toFixed(2) : '0.00'}</p>
+            <p><strong>Notes:</strong> ${escapeHtml(member.notes || '-')}</p>
+            <p><strong>Age:</strong> ${escapeHtml(member.age != null ? member.age : '-')}</p>
+            <p><strong>Next of Kin:</strong> ${escapeHtml(member.next_of_kin || '-')}</p>
+            <p><strong>Next of Kin Contact:</strong> ${escapeHtml(member.next_of_kin_contact || '-')}</p>
+          `;
+          modal.style.display = 'flex';
+        }
+      } catch(err) {
+        console.error(err);
+        alert('Error loading member details.');
+      }
+    }
+
+    closeModal.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    async function onDelete(e){
+      const id = e.currentTarget.dataset.id;
+      if (!id) return alert('Missing member id');
+      if (!confirm('Delete member '+id+'? This is irreversible.')) return;
+      try {
+        const res = await fetch("{{ url_for('api_delete_member') }}", {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({member_id: id})
+        });
+        const j = await res.json();
+        if (j.ok) {
+          msg.textContent = j.msg || 'Member removed';
+          loadMembers();
+        } else {
+          alert(j.msg || 'Failed to delete');
+        }
+      } catch(err){
+        console.error(err);
+        alert('Network error while deleting');
+      }
+    }
+
+    async function onToggle(e){
+      const id = e.currentTarget.dataset.id;
+      const current = e.currentTarget.dataset.status || 'active';
+      const newStatus = (current === 'active') ? 'suspended' : 'active';
+      if (!confirm(`Change status for ${id} to ${newStatus}?`)) return;
+      try {
+        const res = await fetch("{{ url_for('api_update_member_status') }}", {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ member_id: id, status: newStatus })
+        });
+        const j = await res.json();
+        if (j.ok) {
+          msg.textContent = j.msg || 'Status updated';
+          loadMembers();
+        } else {
+          alert(j.msg || 'Failed to update status');
+        }
+      } catch(err) {
+        console.error(err);
+        alert('Network error while updating status');
+      }
+    }
+
+    function escapeHtml(s){
+      if (s === null || s === undefined) return '-';
+      return String(s).replace(/[&<>"'`=\/]/g, function(x){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'})[x]; });
+    }
+
+    loadMembers();
+  })();
+  </script>
+</body>
+</html>

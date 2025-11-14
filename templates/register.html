@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Register - Library Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e6f7ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .register-container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #ccc;
+      width: 320px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #2196f3;
+    }
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #2196f3;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    select {
+      cursor: pointer;
+      background: white;
+    }
+    button {
+      background-color: #2196f3;
+      border: none;
+      color: white;
+      padding: 10px 0;
+      width: 95%;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1769aa;
+    }
+    .message p {
+      margin: 6px 0;
+    }
+    .message p.danger {
+      color: #f44336;
+    }
+    .message p.success {
+      color: #4caf50;
+    }
+    a {
+      color: #2196f3;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="register-container">
+    <h2>Register</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="message">
+          {% for category, message in messages %}
+            <p class="{{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <input type="text" name="full_name" placeholder="Full Name" required autofocus />
+      <input type="text" name="phone" placeholder="Phone Number" required />
+      <input type="text" name="username" placeholder="Choose a username" required />
+      <input type="password" name="password" placeholder="Choose a password" required />
+      
+      <select name="role" required>
+        <option value="" disabled selected>Choose role</option>
+        <option value="admin">Admin</option>
+        <option value="librarian">Librarian</option>
+        <option value="member">Member</option>
+      </select>
+
+      <button type="submit">Register</button>
+    </form>
+    <p><a href="{{ url_for('login') }}">Already have an account? Login</a></p>
+  </div>
+
+</body>
+</html>

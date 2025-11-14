@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daily Planner</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f9f6; margin: 0; color: #333; }
+    header { background: #2d6a4f; color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 22px; }
+    .btn { padding: 10px 16px; border-radius: 6px; background: #0077b6; color: #fff; border: none; cursor: pointer; font-weight: 700; transition: background 0.3s; }
+    .btn:hover { opacity: 0.9; }
+    .planner-container { max-width: 800px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+    .form-group { margin: 8px 0; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input[type="text"], input[type="date"], textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #eee; text-align: left; }
+    thead th { background: #2d6a4f; color: #fff; }
+    .checkbox { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Daily Planner</h1>
+    <a href="{{ url_for('dashboard')}}" class="btn">Back to Dashboard</a>
+  </header>
+
+  <div class="planner-container">
+    <h2>Add a New Task</h2>
+    <form id="task-form">
+      <div class="form-group">
+        <label for="task-title">Task Title</label>
+        <input type="text" id="task-title" required />
+      </div>
+      <div class="form-group">
+        <label for="task-date">Due Date</label>
+        <input type="date" id="task-date" />
+      </div>
+      <div class="form-group">
+        <label for="task-notes">Notes</label>
+        <textarea id="task-notes" rows="4"></textarea>
+      </div>
+      <button type="submit" class="btn">Add Task</button>
+    </form>
+
+    <h2>Tasks</h2>
+    <table id="task-table">
+      <thead>
+        <tr>
+          <th>Completed</th>
+          <th>Task</th>
+          <th>Due Date</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="task-list">
+        <!-- Tasks will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const taskForm = document.getElementById('task-form');
+    const taskList = document.getElementById('task-list');
+
+    // Load tasks from local storage
+    const loadTasks = () => {
+      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      tasks.forEach(task => addTaskToTable(task));
+    };
+
+    // Add a task to the table
+    const addTaskToTable = (task) => {
+      const taskRow = document.createElement('tr');
+      taskRow.innerHTML = `
+        <td><input type="checkbox" class="checkbox" /></td>
+        <td>${task.title}</td>
+        <td>${task.date || 'No specific date'}</td>
+        <td>${task.notes || 'No notes'}</td>
+      `;
+      taskRow.querySelector('.checkbox').addEventListener('change', function() {
+        if (this.checked) {
+          taskRow.remove();
+          removeTaskFromStorage(task);
+        }
+      });
+      taskList.appendChild(taskRow);
+    };
+
+    // Remove a task from local storage
+    const removeTaskFromStorage = (taskToRemove) => {
+      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      const updatedTasks = tasks.filter(task => task.title !== taskToRemove.title);
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    };
+
+    // Add task event
+    taskForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const taskTitle = document.getElementById('task-title').value;
+      const taskDate = document.getElementById('task-date').value;
+      const taskNotes = document.getElementById('task-notes').value;
+
+      const task = { title: taskTitle, date: taskDate, notes: taskNotes };
+      addTaskToTable(task);
+
+      // Save to local storage
+      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      tasks.push(task);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+
+      // Clear the form
+      taskForm.reset();
+    });
+
+    // Load tasks on page load
+    window.onload = loadTasks;
+  </script>
+</body>
+</html>

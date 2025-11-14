@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library Management System</title>
+  <style>
+    body {
+      background: linear-gradient(120deg, #e6f7ff, #e8f5e9);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 100px auto;
+      text-align: center;
+    }
+    h1 {
+      font-weight: bold;
+      color: #4caf50; /* green */
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #2196f3; /* blue */
+      font-size: 1.2rem;
+      margin-bottom: 40px;
+    }
+    a.btn {
+      display: inline-block;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      text-decoration: none;
+      color: white;
+      border-radius: 5px;
+      margin: 0 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    a.btn-success { background-color: #4caf50; }
+    a.btn-success:hover { background-color: #3b8e3b; }
+    a.btn-primary { background-color: #2196f3; }
+    a.btn-primary:hover { background-color: #176fca; }
+    a.btn-danger { background-color: #f44336; }
+    a.btn-danger:hover { background-color: #ba3324; }
+
+    /* Flash message styles */
+    .messages {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 0;
+    }
+    .alert {
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      font-size: 1rem;
+      text-align: center;
+      opacity: 1; /* Added for fade-out effect */
+      transition: opacity 0.5s ease; /* Added for fade-out effect */
+    }
+    .alert-success { background-color: #d4edda; color: #155724; }
+    .alert-danger  { background-color: #f8d7da; color: #721c24; }
+    .alert-warning { background-color: #fff3cd; color: #856404; }
+    .alert-info    { background-color: #d1ecf1; color: #0c5460; }
+  </style>
+</head>
+<body>
+
+  <div class="messages">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  </div>
+
+  <div class="container">
+    <h1>📚 Lunyati Library Management</h1>
+    <p>Your digital library gateway</p>
+    <a href="{{ url_for('login') }}" class="btn btn-success">Login</a>
+    <a href="{{ url_for('register') }}" class="btn btn-primary">Register</a>
+  </div>
+
+  <!-- Added JS to fade out flash messages after 3 seconds -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(alert => {
+          alert.style.opacity = "0"; // Start fade-out
+          setTimeout(() => alert.remove(), 500); // Remove after fade
+        });
+      }, 3000); // Wait 3 seconds before fading
+    });
+  </script>
+
+</body>
+</html>
