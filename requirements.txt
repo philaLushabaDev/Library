@@ -1,7 +1,9 @@
-Flask==3.0.3
+Flask==3.0.2
 flask-mysqldb==2.0.0
 mysqlclient==2.2.4
-Werkzeug==3.0.3
-pandas==2.2.3
-openpyxl==3.1.5
-requests==2.32.3
+pandas==2.2.0
+openpyxl==3.1.2
+requests==2.31.0
+python-dotenv==1.0.1
+gunicorn==21.2.0
+XlsxWriter==3.1.9
